@@ -1,0 +1,10 @@
+{
+    "Lua.diagnostics.globals": [
+        "gridCells"
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global",
+        "undefined-global",
+        "undefined-field"
+    ]
+}
