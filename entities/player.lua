@@ -10,6 +10,10 @@ function player:new(x, y, size)
     self.speed = 5
     self.sprite = sprite(x, y, self.size, self.size, "assets/player.png")
     self.collision_box = collision_box(x, y, self.size, self.size, 0)
+    
+    -- Store screen dimensions for bounds checking
+    self.screenWidth = love.graphics.getWidth()
+    self.screenHeight = love.graphics.getHeight()
 end
 
 function player:draw()
@@ -46,6 +50,31 @@ function player:move(x, y)
     
     -- If no collision, update sprite position
     self.sprite:move(x, y)
+end
+
+function player:handleInput(controls)
+    -- Get movement vector from controls
+    local moveX, moveY = controls:getMovementVector()
+    
+    -- Apply movement if within bounds
+    if moveX ~= 0 then
+        local newX = self.x + (moveX * self.speed)
+        if newX >= 0 and newX <= self.screenWidth - self.size then
+            self:move(newX, self.y)
+        end
+    end
+    
+    if moveY ~= 0 then
+        local newY = self.y + (moveY * self.speed)
+        if newY >= 0 and newY <= self.screenHeight - self.size then
+            self:move(self.x, newY)
+        end
+    end
+    
+    -- Check for interaction
+    if controls:isDown("interact") then
+        self:interact()
+    end
 end
 
 function player:interact()

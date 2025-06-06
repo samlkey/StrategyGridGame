@@ -4,7 +4,7 @@ local collision_box = require("module/collision_box")
 local dialog = require("module/dialog")
 local npc = class:extend("npc")
 
-function npc:new(x, y, size)
+function npc:new(x, y, size, dialogue, type)
     self.x = x
     self.y = y
     self.size = size
@@ -19,7 +19,9 @@ function npc:new(x, y, size)
     self.speed = 200
 
     -- NPC properties
-    self.dialogue = "Hello, I'm an NPC!"
+    self.dialogue = dialogue
+    -- Type: 0 = enemy, 1 = ally
+    self.type = type
 
     -- Create interaction trigger box centered on NPC
     local triggerSize = self.size * 2
@@ -56,6 +58,17 @@ end
 function npc:interact()
     local dialog = dialog(self.dialogue)
     dialog:draw()
+
+    if self.type == 0 then
+        -- Switch between overworld and battle scenes
+        if gameScene.currentScene == gameScene.SCENES.OVERWORLD then
+            gameScene:switchTo("BATTLE")
+        else
+            gameScene:switchTo("OVERWORLD")
+        end
+        -- Update rendered entities for collision detection
+        renderedEntities = gameScene:getCurrentEntities()
+    end
 end
 
 return npc

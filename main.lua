@@ -2,6 +2,8 @@ local GRID = require("struct/grid")
 local PLAYER = require("entities/player")
 local NPC = require("entities/npc")
 local OBJECT = require("entities/object")
+local CONTROLS = require("module/controls")
+local SCENE = require("module/scene")
 
 --load(), present on game start/load
 function love.load()
@@ -11,10 +13,14 @@ function love.load()
     screenHeight = love.graphics.getHeight()
     debugKeyPressed = false
 
-    -- Rendered entities
-    renderedEntities = {}
+    -- Initialize controls
+    controls = CONTROLS()
+    
+    -- Initialize scene manager
+    gameScene = SCENE()
 
     -- Grid
+    -- Change this to be a battle.lua object
     local gridCells = 8
     local cellSize = 60
 
@@ -26,37 +32,38 @@ function love.load()
 
     bGrid = GRID(gridCells, cellSize, gridOriginX, gridOriginY)
     
-    -- Entities
+    -- Create entities
     player = PLAYER(100, 100, 70)
-    npc = NPC(200, 200, 70)
-    table.insert(renderedEntities, player)
-    table.insert(renderedEntities, npc)
-
-    -- Objects
+    npc = NPC(200, 200, 70, "Hello, I'm an NPC!", 1)
+    npc2 = NPC(600, 300, 70, "Lets fight!", 0)
     object = OBJECT(300, 300, 70)
-    table.insert(renderedEntities, object)
     
-    -- Initialize joystick state
-    joysticks = love.joystick.getJoysticks()
-    activeJoystick = joysticks[1]
+    -- Add entities to appropriate scenes
+    -- Eventually want to be adding maps to the scene manager
+    gameScene:addEntity(player, "overworld")
+    gameScene:addEntity(npc, "overworld")
+    gameScene:addEntity(npc2, "overworld")
+    gameScene:addEntity(object, "overworld")
+
+    -- Add grid to battle scene
+    gameScene:addEntity(bGrid, "battle")
+    
+    -- Store entities globally for collision checking
+    renderedEntities = gameScene:getCurrentEntities()
 end
 
 --update(), called every frame
 function love.update(dt)
-    -- Game mode, 0 = overworld, 1 = battle
-    mode = 0
-
-    -- Player controlls
-    if mode == 0 then
-        handlePlayerInput()
-        -- Interact with NPCs
-        if love.keyboard.isDown("e") then
-            player:interact()
-        end
+    -- Handle player input in overworld mode
+    if gameScene.currentScene == gameScene.SCENES.OVERWORLD then
+        player:handleInput(controls)
     end
 
-    -- Switch debug mode
-    if love.keyboard.isDown("f1") then
+    -- Update current scene
+    gameScene:update(dt)
+
+    -- Switch scenes with debug key
+    if controls:isDown("debug") then
         if not debugKeyPressed then
             DEBUG = not DEBUG
             debugKeyPressed = true
@@ -68,59 +75,16 @@ end
 
 --draw(), used to draw graphics/text to the screen
 function love.draw()
-    -- if i = draw bGrid
-    if mode == 1 then
-        -- Clear screen
-        love.graphics.clear()
-        bGrid:draw()
-    else
-        -- Draw entities
-        for _, entity in ipairs(renderedEntities) do
-            entity:draw()
-        end
-    end
+    gameScene:draw()
 end
 
-function handlePlayerInput()
-    -- Move player if key/button pressed
-    -- Check vertical movement
-    local verticalInput = 0
-    local horizontalInput = 0
-    
-    -- Get joystick input if a joystick is connected
-    if activeJoystick then
-        verticalInput = activeJoystick:getAxis(2)
-        horizontalInput = activeJoystick:getAxis(1)
-    end
-    
-    if (love.keyboard.isDown("up", "w") or (activeJoystick and verticalInput < -0.2)) and player.y > 0 then
-        player:move(player.x, player.y - player.speed)
-    end
-    if (love.keyboard.isDown("down", "s") or (activeJoystick and verticalInput > 0.2)) and player.y < screenHeight - player.size then
-        player:move(player.x, player.y + player.speed)
-    end
-    
-    -- Check horizontal movement
-    if (love.keyboard.isDown("left", "a") or (activeJoystick and horizontalInput < -0.2)) and player.x > 0 then
-        player:move(player.x - player.speed, player.y)
-    end
-    if (love.keyboard.isDown("right", "d") or (activeJoystick and horizontalInput > 0.2)) and player.x < screenWidth - player.size then
-        player:move(player.x + player.speed, player.y)
-    end
-end
-
--- Joystick connection handlers
+-- Forward joystick events to controls module
 function love.joystickadded(joystick)
-    if not activeJoystick then
-        activeJoystick = joystick
-    end
+    controls:joystickAdded(joystick)
 end
 
 function love.joystickremoved(joystick)
-    if activeJoystick == joystick then
-        joysticks = love.joystick.getJoysticks()
-        activeJoystick = joysticks[1]
-    end
+    controls:joystickRemoved(joystick)
 end
 
 -- https://www.youtube.com/watch?v=wttKHL90Ank
