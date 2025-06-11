@@ -3,17 +3,13 @@ local sprite = require("module/sprite")
 local player = class:extend("player")
 local collision_box = require("module/collision_box")
 
-function player:new(x, y, size)
+function player:new(x, y, size, ox, oy)
     self.x = x
     self.y = y
     self.size = size
     self.speed = 5
-    self.sprite = sprite(x, y, self.size, self.size, "assets/player.png")
+    self.sprite = sprite(x, y, self.size, self.size, "assets/player.png", ox, oy)
     self.collision_box = collision_box(x, y, self.size, self.size, 0)
-    
-    -- Store screen dimensions for bounds checking
-    self.screenWidth = love.graphics.getWidth()
-    self.screenHeight = love.graphics.getHeight()
 end
 
 function player:draw()
@@ -56,17 +52,23 @@ function player:handleInput(controls)
     -- Get movement vector from controls
     local moveX, moveY = controls:getMovementVector()
     
-    -- Apply movement if within bounds
+    -- Apply movement
     if moveX ~= 0 then
         local newX = self.x + (moveX * self.speed)
-        if newX >= 0 and newX <= self.screenWidth - self.size then
+        -- Get map width from the global overworld object
+        local mapWidth = gameScene:getMap().width * gameScene:getMap().tilewidth
+        -- Allow movement within map bounds
+        if newX >= 0 and newX <= mapWidth - self.size then
             self:move(newX, self.y)
         end
     end
     
     if moveY ~= 0 then
         local newY = self.y + (moveY * self.speed)
-        if newY >= 0 and newY <= self.screenHeight - self.size then
+        -- Get map height from the global overworld object
+        local mapHeight = gameScene:getMap().height * gameScene:getMap().tileheight
+        -- Allow movement within map bounds
+        if newY >= 0 and newY <= mapHeight - self.size then
             self:move(self.x, newY)
         end
     end

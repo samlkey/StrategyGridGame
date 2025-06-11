@@ -9,7 +9,7 @@ function scene:new()
         BATTLE = "battle",
         PAUSE = "pause"
     }
-    
+
     -- Current scene state
     self.currentScene = self.SCENES.OVERWORLD
     
@@ -27,6 +27,11 @@ function scene:new()
         [self.SCENES.OVERWORLD] = {},
         [self.SCENES.BATTLE] = {},
         [self.SCENES.PAUSE] = {}
+    }
+
+    -- Scene maps
+    self.sceneMaps = {
+        [self.SCENES.OVERWORLD] = overworld
     }
 end
 
@@ -68,6 +73,13 @@ function scene:getCurrentEntities()
 end
 
 function scene:draw()
+    -- Draw the map
+    local map = self:getMap()
+    if map then
+        map:drawLayer(map.layers["Ground"])
+        map:drawLayer(map.layers["Trees"])
+    end
+
     -- Draw current scene's entities
     if self.currentScene == self.SCENES.BATTLE then
         -- Clear screen for battle scene
@@ -103,6 +115,10 @@ function scene:update(dt)
             ui:update(dt)
         end
     end
+end
+
+function scene:getMap()
+    return self.sceneMaps[self.currentScene]
 end
 
 return scene
