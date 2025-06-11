@@ -40,7 +40,7 @@ function love.load()
     bGrid = GRID(gridCells, cellSize, gridOriginX, gridOriginY)
     
     -- Create entities
-    player = PLAYER(100, 100, 70, 35, 35)
+    player = PLAYER(100, 100, 70)
     npc = NPC(200, 200, 70, "Hello, I'm an NPC!", 1)
     object = OBJECT(300, 300, 70)
     

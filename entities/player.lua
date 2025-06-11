@@ -3,13 +3,19 @@ local sprite = require("module/sprite")
 local player = class:extend("player")
 local collision_box = require("module/collision_box")
 
-function player:new(x, y, size, ox, oy)
-    self.x = x
-    self.y = y
+function player:new(x, y, size)
+    -- Store the center offset
+    self.offset = (size/2)
+    
+    -- Position represents the center of the player
+    self.x = x 
+    self.y = y 
     self.size = size
     self.speed = 5
-    self.sprite = sprite(x, y, self.size, self.size, "assets/player.png", ox, oy)
-    self.collision_box = collision_box(x, y, self.size, self.size, 0)
+    -- Sprite is created with offset to center it
+    self.sprite = sprite(x, y, self.size, self.size, "assets/player.png", self.offset, self.offset)
+    -- Collision box should also be centered, so adjust its position by offset
+    self.collision_box = collision_box(x - self.offset, y - self.offset, self.size, self.size, 0)
 end
 
 function player:draw()
@@ -18,7 +24,8 @@ function player:draw()
     -- Draw debug rectangle if in debug mode
     if DEBUG then
         self.collision_box:draw()
-        love.graphics.rectangle("line", self.x, self.y, self.size, self.size)
+        -- Draw debug rectangle from top-left corner
+        love.graphics.rectangle("line", self.x - self.offset, self.y - self.offset, self.size, self.size)
     end
 end
 
@@ -30,7 +37,8 @@ function player:move(x, y)
     -- Try moving to new position
     self.x = x
     self.y = y
-    self.collision_box:move(x, y)
+    -- Move collision box with offset
+    self.collision_box:move(x - self.offset, y - self.offset)
     
     -- Check if the player is colliding with any other entities
     for _, entity in ipairs(renderedEntities) do
@@ -38,7 +46,7 @@ function player:move(x, y)
             if self.collision_box:checkCollision(entity.collision_box) then
                 self.x = oldX
                 self.y = oldY
-                self.collision_box:move(oldX, oldY)
+                self.collision_box:move(oldX - self.offset, oldY - self.offset)
                 return
             end
         end
@@ -57,8 +65,8 @@ function player:handleInput(controls)
         local newX = self.x + (moveX * self.speed)
         -- Get map width from the global overworld object
         local mapWidth = gameScene:getMap().width * gameScene:getMap().tilewidth
-        -- Allow movement within map bounds
-        if newX >= 0 and newX <= mapWidth - self.size then
+        -- Allow movement within map bounds (adjust for offset)
+        if newX - self.offset >= 0 and newX + self.offset <= mapWidth then
             self:move(newX, self.y)
         end
     end
@@ -67,8 +75,8 @@ function player:handleInput(controls)
         local newY = self.y + (moveY * self.speed)
         -- Get map height from the global overworld object
         local mapHeight = gameScene:getMap().height * gameScene:getMap().tileheight
-        -- Allow movement within map bounds
-        if newY >= 0 and newY <= mapHeight - self.size then
+        -- Allow movement within map bounds (adjust for offset)
+        if newY - self.offset >= 0 and newY + self.offset <= mapHeight then
             self:move(self.x, newY)
         end
     end
